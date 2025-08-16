@@ -2,47 +2,60 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\UsersIncome;
-use App\Models\AccessLog;
-use App\Models\VisitorFingerprint;
-use Illuminate\Http\Request;
-
 use App\Models\Employee;
 use App\Models\EmployeeAccessLog;
+use App\Models\EmployeeFingerprint;
+use Illuminate\Http\Request;
 
-class UsersIncomeController extends Controller
+class EmployeeIncomeController extends Controller
 {
+    public function dashboard()
+    {
+        $user = null;
+        $activeLog = null;
+
+        if (request()->has('numero_documento')) {
+            $user = Employee::where('numero_documento', request('numero_documento'))->first();
+
+            if ($user) {
+                $activeLog = $user->accessLogs()->whereNull('exit_time')->first();
+            }
+        }
+        $employeesInside = EmployeeAccessLog::whereNull('exit_time')->with('employee')->get();
+        return view('incomes.employee.index', compact('employeesInside', 'user', 'activeLog'));
+    }
+
     public function index(Request $request)
     {
         $validated = $request->validate([
             'numero_documento' => 'required|numeric|digits_between:6,12',
         ]);
 
-        $user = UsersIncome::where('numero_documento', $request->numero_documento)->first();
-        $visitorsInside = AccessLog::whereNull('exit_time')->get();
+        $user = Employee::where('numero_documento', $request->numero_documento)->first();
+        $employeesInside = EmployeeAccessLog::whereNull('exit_time')->get();
 
         if ($user) {
-            $activeLog = AccessLog::where('visitor_id', $user->id)
+            $activeLog = EmployeeAccessLog::where('employee_id', $user->id)
                 ->whereNull('exit_time')
                 ->first();
 
-            return view('visitor.index', compact('user', 'activeLog', 'visitorsInside'));
+            return view('incomes.employee.index', compact('user', 'activeLog', 'employeesInside'));
         } else {
-            return view('visitor.index', compact('user', 'visitorsInside'));
+            return view('incomes.employee.index', compact('user', 'employeesInside'));
         }
     }
 
-    public function getAllUsers()
+    public function getAllEmployees()
     {
-        $visitors = UsersIncome::orderBy('nombres')->paginate(5);
-        return view('incomes.visitor.search', compact('visitors'));
+        $employees = Employee::orderBy('nombres')->paginate(5);
+        return view('incomes.employee.search', compact('employees'));
     }
 
     public function search(Request $request)
     {
-     $search = $request->input('nombre');
+    $search = $request->input('nombre');
 
-    $query = UsersIncome::query();
+    $query = Employee::query();
 
     if ($search) {
         if (is_numeric($search)) {
@@ -55,20 +68,21 @@ class UsersIncomeController extends Controller
         }
     }
 
-    $visitors = $query->orderBy('nombres')->paginate(5)->withQueryString();
+    // Paginación con 10 por página
+    $employees = $query->orderBy('nombres')->paginate(5)->withQueryString();
 
-    return view('incomes.visitor.search', compact('visitors'));
+    return view('incomes.employee.search', compact('employees'));
     }
 
     public function create()
     {
-        return view('incomes.visitor.create');
+        return view('incomes.employee.create');
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'numero_documento' => 'required|string|max:20|unique:users_incomes,numero_documento',
+            'numero_documento' => 'required|string|max:20|unique:employees,numero_documento',
             'nombres' => 'required|string|max:100',
             'apellidos' => 'required|string|max:100',
             'fecha_nacimiento' => 'nullable|date',
@@ -83,7 +97,7 @@ class UsersIncomeController extends Controller
             'biometric_data' => 'required|string',
             'tipo_dedo' => 'required|string',
         ], [
-            'biometric_data.required' => 'El registro biométrico es obligatorio para crear un visitante.',
+            'biometric_data.required' => 'El registro biométrico es obligatorio para crear un empleado.',
             'tipo_dedo.required' => 'Debe seleccionar un dedo para el registro biométrico.',
         ]);
 
@@ -94,8 +108,8 @@ class UsersIncomeController extends Controller
                 ->withErrors(['biometric_data' => 'El registro biométrico es obligatorio.']);
         }
 
-        $income = new UsersIncome();
-        $income->fill($request->only([
+        $employee = new Employee();
+        $employee->fill($request->only([
             'numero_documento',
             'nombres',
             'apellidos',
@@ -112,29 +126,29 @@ class UsersIncomeController extends Controller
         if ($request->filled('foto_webcam')) {
             $imageData = str_replace('data:image/jpeg;base64,', '', $request->input('foto_webcam'));
             $imageData = base64_decode($imageData);
-            $imageName = 'visitor_' . $request->input('numero_documento') . '.jpg';
+            $imageName = 'employee_' . $request->input('numero_documento') . '.jpg';
             \Storage::disk('public')->put('photos/' . $imageName, $imageData);
-            $income->foto_webcam = 'photos/' . $imageName;
+            $employee->foto_webcam = 'photos/' . $imageName;
         }
 
-        $income->save();
+        $employee->save();
 
         // Always create fingerprint record since biometric_data is required
-        VisitorFingerprint::create([
-            'visitor_id' => $income->id,
+        EmployeeFingerprint::create([
+            'employee_id' => $employee->id,
             'fingerprint_template' => $request->input('biometric_data'),
             'finger_type' => $request->input('tipo_dedo'),
         ]);
 
-        return redirect()->route('visitor.index')->with('success', 'Visitante registrado exitosamente con registro biométrico.');
+        return redirect()->route('employee.index')->with('success', 'Empleado registrado exitosamente con registro biométrico.');
     }
 
-    public function edit(UsersIncome $usersIncome)
+    public function edit(Employee $employee)
     {
-        return view('incomes.visitor.edit', compact('usersIncome'));
+        return view('incomes.employee.edit', compact('employee'));
     }
 
-    public function update(Request $request, UsersIncome $usersIncome)
+    public function update(Request $request, Employee $employee)
     {
         $request->validate([
             'numero_documento' => 'required|string|max:20',
@@ -151,7 +165,7 @@ class UsersIncomeController extends Controller
             'foto_webcam' => 'nullable|string',
         ]);
 
-        $usersIncome->fill($request->only([
+        $employee->fill($request->only([
             'numero_documento',
             'nombres',
             'apellidos',
@@ -165,32 +179,28 @@ class UsersIncomeController extends Controller
             'area',
         ]));
 
-        $fotoWebcam = $request->input('foto_webcam');
-
-        if ($fotoWebcam && str_starts_with($fotoWebcam, 'data:image')) {
-            // Se tomó una nueva foto (base64)
-            $imageData = str_replace('data:image/jpeg;base64,', '', $fotoWebcam);
+        if ($request->filled('foto_webcam')) {
+            $imageData = str_replace('data:image/jpeg;base64,', '', $request->input('foto_webcam'));
             $imageData = base64_decode($imageData);
-            $imageName = 'visitor_' . $request->input('numero_documento') . '.jpg';
+            $imageName = 'employee_' . $request->input('numero_documento') . '.jpg';
             \Storage::disk('public')->put('photos/' . $imageName, $imageData);
-            $usersIncome->foto_webcam = 'photos/' . $imageName;
+            $employee->foto_webcam = 'photos/' . $imageName;
         }
-        $usersIncome->save();
 
-        return redirect()->route('incomes.searchUser')->with('success', 'Datos del visitante actualizados correctamente.');
+        $employee->save();
+
+        return redirect()->route('employee.searchUser')->with('success', 'Datos del empleado actualizados correctamente.');
     }
 
-    public function destroy(UsersIncome $usersIncome)
+    public function destroy(Employee $employee)
     {
-        $usersIncome->delete();
+        $employee->delete();
 
-        return redirect()->route('incomes.searchUser')->with('success', 'Visitante eliminado exitosamente.');
+        return redirect()->route('employee.searchUser')->with('success', 'Empleado eliminado exitosamente.');
     }
 
-    public function show($id)
+    public function show(Employee $employee)
     {
-        $usersIncome = UsersIncome::findOrFail($id);
-        return view('incomes.edit', compact('usersIncome'));
+        return view('incomes.employee.edit', compact('employee'));
     }
-
 }

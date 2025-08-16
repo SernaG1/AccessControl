@@ -12,6 +12,8 @@ class AccessLog extends Model
 {
     use HasFactory;
 
+    //public $timestamps = false; // <--- IMPORTANTE
+
     protected $fillable = [
         'visitor_id',  // Relaciona con el visitante
         'entry_time',  // Hora de entrada

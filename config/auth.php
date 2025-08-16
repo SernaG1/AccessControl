@@ -3,29 +3,31 @@
 return [
 
     'defaults' => [
-        'guard' => 'admin', // ← Usamos 'web' como guard por defecto
+        'guard' => 'web',
         'passwords' => 'admins',
     ],
 
     'guards' => [
         'admin' => [
             'driver' => 'session',
-            'provider' => 'admins', // ← Asociamos el guard 'web' al provider 'admins'
+            'provider' => 'admins',
+        ],
+        'web' => [
+            'driver' => 'session',
+            'provider' => 'admins',
         ],
     ],
 
     'providers' => [
-        // Ya no necesitas 'users' si no lo usas
-        // Puedes conservarlo si tienes otros usuarios distintos de admin
         'admins' => [
             'driver' => 'eloquent',
-            'model' => App\Models\Admin::class, // ← Usamos el modelo Admin
-        ],
+            'model' => App\Models\Admin::class,
+        ]
     ],
 
     'passwords' => [
         'admins' => [
-            'provider' => 'admins', // ← Si usas recuperación, asócialo también al provider correcto
+            'provider' => 'admins',
             'table' => 'password_reset_tokens',
             'expire' => 60,
             'throttle' => 60,

@@ -22,6 +22,6 @@ class Admin extends Authenticatable
         return 'username';  // Devuelve el nombre del campo que usas para autenticar al admin
     }
 
-    // Si 'username' es tu clave primaria, configúralo de esta manera
     protected $primaryKey = 'username';
+    
 }

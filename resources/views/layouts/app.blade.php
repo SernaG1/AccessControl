@@ -11,6 +11,10 @@
     {{-- Google Fonts y Estilos Personalizados --}}
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 
+        {{-- Vite (JS y CSS de tu proyecto) --}}
+    @vite(['resources/js/app.js'])
+
+    
     <style>
         body {
             font-family: 'Roboto', sans-serif;
@@ -93,15 +97,14 @@
                             <a class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}" href="{{ route('home') }}">Inicio</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('incomes.index') ? 'active' : '' }}" href="{{ route('incomes.index') }}">Ver Visitantes</a>
+                            <a class="nav-link {{ request()->routeIs('employee.index') ? 'active' : '' }}" href="{{ route('employee.index') }}">Ingreso empleados</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('incomes.search') ? 'active' : '' }}" href="{{ route('incomes.search') }}">Buscar</a>
+                            <a class="nav-link {{ request()->routeIs('visitor.index') ? 'active' : '' }}" href="{{ route('visitor.index') }}">Ingreso visitantes</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('incomes.create') ? 'active' : '' }}" href="{{ route('incomes.create') }}">Registrar Usuario</a>
+                            <a class="nav-link {{ request()->routeIs('reports.index') ? 'active' : '' }}" href="{{ route('reports.index') }}">Generar Reporte</a>
                         </li>
-
                     </ul>
                     <ul class="navbar-nav ms-auto">
                         <li class="nav-item">
@@ -128,10 +131,11 @@
     @endauth
 
     @guest('admin')
-        <div class="container text-center mt-5">
-            <h2>Debe iniciar sesión para acceder al sistema</h2>
-            <a href="{{ route('login') }}" class="btn btn-primary mt-3">Ir al Login</a>
-        </div>
+            <div class="container text-center mt-5">
+                <h2>Debe iniciar sesión para acceder al sistema</h2>
+                <a href="{{ route('login') }}" class="btn btn-primary mt-3">Ir al Login</a>
+            </div>
+
     @endguest
 
     {{-- Bootstrap JS --}}

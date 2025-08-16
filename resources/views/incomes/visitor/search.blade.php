@@ -4,6 +4,13 @@
 <div class="container">
     <h2 class="text-center mb-4">Listado de Visitantes</h2>
 
+    <form method="GET" action="{{ route('incomes.searchUser') }}" class="mb-3">
+        <div class="input-group">
+            <input type="text" name="nombre" class="form-control" placeholder="Buscar por nombre" value="{{ request('nombre') }}">
+            <button class="btn btn-primary" type="submit">Buscar</button>
+        </div>
+    </form>
+
     @if($visitors->count())
     <table class="table table-bordered table-striped">
         <thead>
@@ -21,9 +28,8 @@
                 <td>{{ $visitor->nombres }} {{ $visitor->apellidos }}</td>
                 <td>{{ $visitor->area }}</td>
                 <td>
-                    <!-- Botón para abrir modal -->
                     <button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#visitorModal{{ $visitor->id }}">
-                        Ver Credencial
+                        Ver Información
                     </button>
 
                     <a href="{{ route('incomes.edit', $visitor->id) }}" class="btn btn-warning btn-sm">Editar</a>
@@ -36,13 +42,13 @@
                 </td>
             </tr>
 
-            <!-- Modal de credencial para cada visitante -->
+            <!-- Modal de información para cada visitante -->
             <div class="modal fade" id="visitorModal{{ $visitor->id }}" tabindex="-1" aria-labelledby="visitorModalLabel{{ $visitor->id }}" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered modal-sm">
+                <div class="modal-dialog modal-dialog-centered modal-lg">
                     <div class="modal-content text-center">
                         <div class="modal-header bg-primary text-white">
-                            <h5 class="modal-title">Credencial de {{ $visitor->nombres }} {{ $visitor->apellidos }}</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                            <h5 class="modal-title" id="visitorModalLabel{{ $visitor->id }}">Información de {{ $visitor->nombres }} {{ $visitor->apellidos }}</h5>
+                            <button type="button" class="btn btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                         </div>
                         <div class="modal-body">
                             @if($visitor->foto_webcam)
@@ -56,6 +62,10 @@
                             <p><strong>RH:</strong> {{ $visitor->rh }}</p>
                             <p><strong>Género:</strong> {{ $visitor->genero }}</p>
                             <p><strong>Fecha de Nacimiento:</strong> {{ $visitor->fecha_nacimiento }}</p>
+                            <p><strong>Teléfono:</strong> {{ $visitor->telefono }}</p>
+                            <p><strong>Contacto Emergencia:</strong> {{ $visitor->nombre_contacto_emergencia }}</p>
+                            <p><strong>Teléfono Contacto Emergencia:</strong> {{ $visitor->telefono_contacto_emergencia }}</p>
+                            <p><strong>Dirección:</strong> {{ $visitor->direccion }}</p>
                         </div>
                     </div>
                 </div>

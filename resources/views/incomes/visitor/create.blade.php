@@ -1,0 +1,293 @@
+@extends('layouts.app')
+
+@section('content')
+<div class="container">
+    <h2>Registro de Ingreso de Visitante</h2>
+
+    <form action="{{ route('incomes.store') }}" method="POST" enctype="multipart/form-data">
+        @csrf
+
+        @if ($errors->any())
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        {{-- Scanner input for autocompletion --}}
+        <div class="mb-3">
+            <label for="scanner_string" class="form-label">Entrada del Scanner (cadena)</label>
+            <input type="text" id="scanner_string" name="scanner_string" class="form-control" placeholder="Pega la cadena del scanner aquí">
+            <button type="button" class="btn btn-secondary mt-2" id="parseScannerBtn">Autocompletar campos</button>
+            <div id="scannerError" class="text-danger mt-2" style="display:none;"></div>
+        </div>
+
+        {{-- Datos personales --}}
+        <div class="mb-3">
+            <label for="numero_documento" class="form-label">Número de Documento</label>
+            <input type="text" name="numero_documento" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="nombres" class="form-label">Nombres</label>
+            <input type="text" name="nombres" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="apellidos" class="form-label">Apellidos</label>
+            <input type="text" name="apellidos" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="fecha_nacimiento" class="form-label">Fecha de Nacimiento</label>
+            <input type="date" name="fecha_nacimiento" class="form-control">
+        </div>
+
+        <div class="mb-3">
+            <label for="genero" class="form-label">Género</label>
+            <select name="genero" class="form-select">
+                <option value="" disabled selected>Selecciona</option>
+                <option value="M">Masculino</option>
+                <option value="F">Femenino</option>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label for="rh" class="form-label">Tipo de Sangre (RH)</label>
+            <select name="rh" class="form-select">
+                <option value="" disabled selected>Selecciona</option>
+                <option value="A+">A+</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B-">B-</option>
+                <option value="AB+">AB+</option>
+                <option value="AB-">AB-</option>
+                <option value="O+">O+</option>
+                <option value="O-">O-</option>
+            </select>
+        </div>
+
+        {{-- Nuevos campos personales --}}
+        <div class="mb-3">
+            <label for="telefono" class="form-label">Teléfono</label>
+            <input type="text" name="telefono" class="form-control">
+        </div>
+
+        <div class="mb-3">
+            <label for="direccion" class="form-label">Dirección</label>
+            <input type="text" name="direccion" class="form-control">
+        </div>
+
+        {{-- Datos de contacto de emergencia --}}
+        <div class="mb-3">
+            <label for="nombre_contacto_emergencia" class="form-label">Nombre del Contacto de Emergencia</label>
+            <input type="text" name="nombre_contacto_emergencia" class="form-control">
+        </div>
+
+        <div class="mb-3">
+            <label for="telefono_contacto_emergencia" class="form-label">Teléfono de Contacto de Emergencia</label>
+            <input type="text" name="telefono_contacto_emergencia" class="form-control">
+        </div>
+
+        {{-- Área a Visitar --}}
+        <div class="mb-3">
+            <label for="area" class="form-label">Área a Visitar</label>
+            <select name="area" class="form-select">
+                <option value="" disabled selected>Selecciona</option>
+                <option value="Contabilidad">Contabilidad</option>
+                <option value="Operaciones">Operaciones</option>
+                <option value="Gerencia">Gerencia</option>
+                <option value="Auxiliar administrativo">Auxiliar administrativo</option>
+                <option value="Gestión humana">Gestión humana</option>
+                <option value="HSEQ">HSEQ</option>
+                <option value="Almacén">Almacén</option>
+                <option value="Selección">Selección</option>
+            </select>
+        </div>
+
+        {{-- Captura de imagen --}}
+        <div class="mb-3">
+            <label class="form-label">Capturar Foto (Webcam)</label>
+            <div id="my_camera" class="mb-2" style="width:320px; height:240px; border:1px solid #ccc;"></div>
+            <button type="button" class="btn btn-info mt-2" onclick="take_snapshot()">Capturar Foto</button>
+            <button type="button" class="btn btn-warning mt-2 ms-2" onclick="requestCameraPermission()">Solicitar Permiso Cámara</button>
+        </div>
+
+        {{-- Vista previa --}}
+        <div class="mb-3">
+            <label class="form-label">Vista previa de la foto</label>
+            <div id="my_result"></div>
+        </div>
+
+        {{-- Campo oculto para guardar la imagen --}}
+        <input type="hidden" name="foto_webcam" id="foto_webcam">
+
+        {{-- Selección tipo de dedo --}}
+        <div class="mb-3">
+            <label for="tipo_dedo" class="form-label">Seleccione el Tipo de Dedo</label>
+            <select name="tipo_dedo" id="tipo_dedo" class="form-select" required>
+                <option value="" disabled selected>Seleccione</option>
+                <option value="pulgar_izquierdo">Pulgar Izquierdo</option>
+                <option value="indice_izquierdo">Índice Izquierdo</option>
+                <option value="medio_izquierdo">Medio Izquierdo</option>
+                <option value="anular_izquierdo">Anular Izquierdo</option>
+                <option value="meñique_izquierdo">Meñique Izquierdo</option>
+                <option value="pulgar_derecho">Pulgar Derecho</option>
+                <option value="indice_derecho">Índice Derecho</option>
+                <option value="medio_derecho">Medio Derecho</option>
+                <option value="anular_derecho">Anular Derecho</option>
+                <option value="meñique_derecho">Meñique Derecho</option>
+            </select>
+        </div>
+
+        {{-- Validación Biométrica --}}
+        <div class="mb-3">
+            <label class="form-label">Validación Biométrica</label>
+            <div class="d-flex align-items-center">
+                <button type="button" class="btn btn-success me-2" onclick="enrollBiometric()">
+                    <i class="fas fa-fingerprint"></i> Enrolar Validación Biométrica
+                </button>
+                <div id="biometricSpinner" class="spinner-border text-primary" style="display:none;" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+            </div>
+            <div id="biometricResult" class="mt-2"></div>
+            <input type="hidden" name="biometric_data" id="biometric_data">
+            <input type="hidden" name="user_type" value="visitor">
+        </div>
+
+        {{-- Botón de envío --}}
+        <button type="submit" class="btn btn-primary" onclick="return validateBiometric()">Registrar Ingreso</button>
+    </form>
+</div>
+@endsection
+
+@section('scripts')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/webcamjs/1.0.25/webcam.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+
+<script>
+    // Configurar la webcam
+    Webcam.set({
+        width: 320,
+        height: 240,
+        image_format: 'jpeg',
+        jpeg_quality: 90
+    });
+
+    Webcam.attach('#my_camera');
+
+    function take_snapshot() {
+        Webcam.snap(function(data_uri) {
+            // Mostrar imagen capturada
+            document.getElementById('my_result').innerHTML = '<img src="'+data_uri+'" class="img-thumbnail"/>';
+
+            // Guardar base64 en el input oculto
+            document.getElementById('foto_webcam').value = data_uri;
+        });
+    }
+</script>
+
+<script>
+document.getElementById('parseScannerBtn').addEventListener('click', function() {
+    const scannerString = document.getElementById('scanner_string').value.trim();
+    const errorDiv = document.getElementById('scannerError');
+    errorDiv.style.display = 'none';
+    errorDiv.textContent = '';
+
+    if (!scannerString) {
+        errorDiv.textContent = 'Por favor ingresa la cadena del scanner.';
+        errorDiv.style.display = 'block';
+        return;
+    }
+
+    fetch('/api/usersincome/parse-scanner', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ scanner_string: scannerString })
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(data => { throw new Error(data.error || 'Error al procesar la cadena'); });
+        }
+        return response.json();
+    })
+    .then(data => {
+        document.querySelector('input[name="numero_documento"]').value = data.numero_documento || '';
+        document.querySelector('input[name="nombres"]').value = data.nombres || '';
+        document.querySelector('input[name="apellidos"]').value = data.apellidos || '';
+        document.querySelector('select[name="genero"]').value = data.genero || '';
+        if (data.fecha_nacimiento) {
+            document.querySelector('input[name="fecha_nacimiento"]').value = data.fecha_nacimiento;
+        }
+    })
+    .catch(error => {
+        errorDiv.textContent = error.message;
+        errorDiv.style.display = 'block';
+    });
+});
+</script>
+
+<script>
+    async function enrollBiometric() {
+        const btn = document.querySelector('button[onclick="enrollBiometric()"]');
+        const spinner = document.getElementById('biometricSpinner');
+        const resultDiv = document.getElementById('biometricResult');
+
+        btn.disabled = true;
+        spinner.style.display = 'inline-block';
+        resultDiv.textContent = '';
+
+        try {
+            const response = await fetch('/api/capture', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    tipo_dedo: document.querySelector('select[name="tipo_dedo"]').value
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.status === 'success') {
+                resultDiv.textContent = 'Huella capturada correctamente.';
+                document.getElementById('biometric_data').value = data.huella;
+            } else {
+                resultDiv.textContent = data.message || 'Error en la captura biométrica.';
+            }
+        } catch (error) {
+            resultDiv.textContent = 'Error de conexión: ' + error.message;
+        } finally {
+            btn.disabled = false;
+            spinner.style.display = 'none';
+        }
+    }
+    function validateBiometric() {
+        const biometricData = document.getElementById('biometric_data').value;
+        const tipoDedo = document.getElementById('tipo_dedo').value;
+        
+        if (!biometricData || biometricData.trim() === '') {
+            alert('⚠️ Registro biométrico obligatorio\n\nPor favor capture la huella dactilar antes de registrar al visitante.');
+            return false;
+        }
+        
+        if (!tipoDedo || tipoDedo === '') {
+            alert('⚠️ Tipo de dedo obligatorio\n\nPor favor seleccione el dedo utilizado para el registro biométrico.');
+            return false;
+        }
+        
+        return true;
+    }
+</script>
+@endsection

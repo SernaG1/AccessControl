@@ -17,6 +17,58 @@ class UsersIncomeApi extends Controller
     }
 
     /**
+     * Parse scanner input string and return parsed fields.
+     */
+    public function parseScannerString(Request $request)
+    {
+        $request->validate([
+            'scanner_string' => 'required|string',
+        ]);
+
+        $scannerString = $request->input('scanner_string');
+
+        // Example input: "1002547605 SERNA GARZON JUAN MANUEL M 19990515"
+        // Parsing logic: split by spaces, assign fields accordingly
+
+        $parts = preg_split('/\s+/', trim($scannerString));
+
+        if (count($parts) < 6) {
+            return response()->json(['error' => 'Invalid scanner string format'], 422);
+        }
+
+        $numero_documento = ltrim($parts[0], '0');
+        $genero = $parts[count($parts) - 2];
+        $fecha_nacimiento_raw = $parts[count($parts) - 1];
+
+        // Parse birthdate from YYYYMMDD to YYYY-MM-DD
+        $fecha_nacimiento = null;
+        if (preg_match('/^\d{8}$/', $fecha_nacimiento_raw)) {
+            $fecha_nacimiento = substr($fecha_nacimiento_raw, 0, 4) . '-' .
+                               substr($fecha_nacimiento_raw, 4, 2) . '-' .
+                               substr($fecha_nacimiento_raw, 6, 2);
+        }
+
+        // Extract names and surnames (middle parts)
+        $middleParts = array_slice($parts, 1, count($parts) - 3);
+
+      
+        if (count($middleParts) < 3) {
+            return response()->json(['error' => 'Invalid name format in scanner string'], 422);
+        }
+
+        $apellidos = $middleParts[0] . ' ' . $middleParts[1];
+        $nombres = implode(' ', array_slice($middleParts, 2));
+
+        return response()->json([
+            'numero_documento' => $numero_documento,
+            'nombres' => $nombres,
+            'apellidos' => $apellidos,
+            'genero' => $genero,
+            'fecha_nacimiento' => $fecha_nacimiento,
+        ]);
+    }
+
+    /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)

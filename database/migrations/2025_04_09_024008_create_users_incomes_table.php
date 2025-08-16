@@ -19,6 +19,10 @@ return new class extends Migration
             $table->date('fecha_nacimiento')->nullable();
             $table->enum('genero', ['M', 'F'])->nullable();
             $table->string('rh')->nullable();
+            $table->string('telefono')->nullable();
+            $table->string('nombre_contacto_emergencia')->nullable();
+            $table->string('telefono_contacto_emergencia')->nullable();
+            $table->string('direccion')->nullable();
             $table->string('area')->nullable();
             $table->string('foto_webcam')->nullable();  // Para guardar la ruta de la foto
             $table->timestamps();

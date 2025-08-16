@@ -3,9 +3,30 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\UsersIncomeApi;
+use App\Http\Controllers\BiometricController;
 
-Route::get('/user', function (Request $request) {
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+| Aquí definimos las rutas que usará Laravel para comunicación con el
+| servicio biométrico y el control de ingresos.
+|--------------------------------------------------------------------------
+*/
+
+// Información del usuario autenticado (si usas Sanctum)
+Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
-})->middleware('auth:sanctum');
+});
 
-Route::apiResource('usersincomeapi', UsersIncomeApi::class);
+// Parseo de cadena de scanner
+Route::post('/usersincome/parse-scanner', [UsersIncomeApi::class, 'parseScannerString'])
+    ->name('usersincome.parseScanner');
+
+// Biometría - Captura de huella (enrollment)
+Route::post('/capture', [BiometricController::class, 'capture'])
+    ->name('fingerprint.capture');
+
+// Biometría - Validación/Identificación  de huella
+Route::post('/identify', [BiometricController::class, 'identify'])
+    ->name('fingerprint.identify');

@@ -2,12 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Models\AccessLog;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Model;
 
-class UsersIncome extends Model
+class Employee extends Model
 {
     use HasFactory;
 
@@ -24,20 +22,17 @@ class UsersIncome extends Model
         'direccion',
         'area',
         'foto_webcam',
+        'estado',
         'fingerprint_data',
         'fingerprint_template'
     ];
 
-    /**
-     * Relación: Un visitante (UsersIncome) tiene muchos registros de acceso (AccessLog).
-     */
     public function accessLogs()
     {
-        // Relaciona a AccessLog con 'visitor_id' en lugar de 'users_income_id'
-        return $this->hasMany(AccessLog::class, 'visitor_id');
+        return $this->hasMany(\App\Models\EmployeeAccessLog::class, 'employee_id');
     }
-    public function fingerprints()
+        public function fingerprints()
     {
-        return $this->hasMany(VisitorFingerprint::class);
+        return $this->hasMany(EmployeeFingerprint::class);
     }
 }

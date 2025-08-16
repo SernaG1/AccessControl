@@ -5,67 +5,83 @@ namespace App\Http\Controllers;
 use App\Models\AccessLog;
 use App\Models\UsersIncome;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class AccessLogController extends Controller
 {
-
-    
     public function registerEntry($visitorId)
     {
-    $visitor = UsersIncome::findOrFail($visitorId);
+        \Log::info("registrando para id visitante: {$visitorId} en " . now());
 
-    // Verificar si ya tiene una entrada sin salida
-    $activeEntry = $visitor->accessLogs()->whereNull('exit_time')->first();
-
-    if ($activeEntry) {
-        return redirect()->back()->with('error', 'El visitante ya está registrado como dentro.');
-    }
-
-    // Registrar nueva entrada
-    $log = new AccessLog();
-    $log->visitor_id = $visitor->id;
-    $log->entry_time = now();
-    $log->save();
-        session()->flash('success', 'Entrada registrada correctamente.');
-        return redirect()->route('incomes.index');
-    }
-
-    /**
-     * Registrar la salida de un visitante.
-     */
-    public function registerExit($visitorId)
-    {
         $visitor = UsersIncome::findOrFail($visitorId);
 
-        // Verifica si tiene un registro de entrada activo
-        $log = $visitor->accessLogs()
-            ->whereNull('exit_time')
-            ->latest()
-            ->first();
-    
-        if (!$log) {
-            // No tiene registro activo, no se puede registrar salida
-            session()->flash('error', 'El visitante no tiene una entrada activa.');
-            return redirect()->route('incomes.index');
+        // Verificar si ya tiene una entrada sin salida
+        $activeEntry = $visitor->accessLogs()->whereNull('exit_time')->first();
+
+        if ($activeEntry) {
+            \Log::warning("ID visitante: {$visitorId} Ya ha sido ingresado, hora de ingreso: " . $activeEntry->entry_time);
+            return redirect()->back()->with('error', 'El visitante ya está registrado como dentro.');
         }
-    
-        // Registrar la hora de salida
-        $log->exit_time = now();
+
+        // Registrar nueva entrada
+        $log = new AccessLog();
+        $log->visitor_id = $visitor->id;
+        $log->entry_time = Carbon::now();  // Mejor que usar date_create o date()
+        $log->exit_time = null;
         $log->save();
-    
-        session()->flash('success', 'Salida registrada correctamente.');
-        return redirect()->route('incomes.index');
+
+        \Log::info("entrada registrada para visitante: {$visitorId} con entrada en: " . $log->entry_time);
+
+        session()->flash('success', 'Entrada registrada correctamente.');
+        return redirect()->route('visitor.index');
     }
 
-    /**
-     * Obtener los visitantes actualmente dentro de la sede.
-     */
+public function registerExit($visitorId)
+{
+    \Log::info("Registering exit for visitor ID: {$visitorId} at " . now());
+
+    $visitor = UsersIncome::findOrFail($visitorId);
+
+    $log = $visitor->accessLogs()
+        ->whereNull('exit_time')
+        ->latest()
+        ->first();
+
+    if (!$log) {
+        \Log::warning("Sin entrada activa.");
+        session()->flash('error', 'No hay entrada activa.');
+        return redirect()->route('visitor.index');
+    }
+
+    // DEBUG antes
+    \Log::debug('ANTES de actualizar', [
+        'entry_time' => $log->entry_time,
+        'exit_time' => $log->exit_time,
+        'dirty' => $log->getDirty(),
+    ]);
+
+    //$log->exit_time = now(); // Solo actualiza exit_time
+    //$log->save(); // O usa saveQuietly() si hay eventos
+
+    $log->update(['exit_time' => now()]);
+
+
+    // DEBUG después
+    \Log::debug('DESPUÉS de actualizar', [
+        'entry_time' => $log->entry_time,
+        'exit_time' => $log->exit_time,
+        'dirty' => $log->getDirty(),
+    ]);
+
+    session()->flash('success', 'Salida registrada correctamente.');
+    return redirect()->route('visitor.index');
+}
+
+
     public function getVisitorsInside()
     {
-    // Obtener los visitantes que tienen una entrada activa (sin salida registrada)
-    $visitorsInside = AccessLog::whereNull('exit_time')->with('visitor')->get();
-
-    return view('incomes.index', compact('visitorsInside'));
+        $visitorsInside = AccessLog::whereNull('exit_time')->with('visitor')->get();
+        return view('visitor.index', compact('visitorsInside'));
     }
 
     public function dashboard()
@@ -81,62 +97,16 @@ class AccessLogController extends Controller
             }
         }
 
-        // Obtener los visitantes que tienen una entrada activa (sin salida registrada)
         $visitorsInside = AccessLog::whereNull('exit_time')->with('visitor')->get();
-
-        return view('incomes.index', compact('visitorsInside', 'user', 'activeLog'));
+        return view('incomes.visitor.index', compact('visitorsInside', 'user', 'activeLog'));
     }
 
-    public function index()
-    {
-        //
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(AccessLog $accessLog)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(AccessLog $accessLog)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, AccessLog $accessLog)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(AccessLog $accessLog)
-    {
-        //
-    }
+    // Métodos vacíos del resource controller (puedes eliminarlos si no los usas)
+    public function index() {}
+    public function create() {}
+    public function store(Request $request) {}
+    public function show(AccessLog $accessLog) {}
+    public function edit(AccessLog $accessLog) {}
+    public function update(Request $request, AccessLog $accessLog) {}
+    public function destroy(AccessLog $accessLog) {}
 }
