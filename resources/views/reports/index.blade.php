@@ -100,7 +100,6 @@
             hora_desde: document.getElementById('hora_desde').value,
             hora_hasta: document.getElementById('hora_hasta').value,
         };
-        window.exportLogs(filters);
     });
 </script>
 

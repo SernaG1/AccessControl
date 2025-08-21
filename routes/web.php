@@ -9,6 +9,7 @@ use App\Http\Controllers\EmployeeAccessLogController;
 use App\Http\Controllers\EmployeeIncomeController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\BiometricController;
+use App\Http\Controllers\AdminController;
 
 Route::get('/', function () {
     if (auth('admin')->check()) {
@@ -69,6 +70,13 @@ Route::middleware(['auth:admin'])->group(function () {
         Route::post('exit/{visitorId}', [AccessLogController::class, 'registerExit'])->name('visitor.exit');
         Route::get('visitors-inside', [AccessLogController::class, 'getVisitorsInside'])->name('visitors.inside');
     });
+
+    Route::get('/web_user/create', [AdminController::class, 'create'])->name('admin.create');
+    Route::post('/web_user/create', [AdminController::class, 'store'])->name('admin.store');
+    Route::get('/web_user/search', [AdminController::class, 'getAllEmployees'])->name('admin.search');
+    Route::get('/web_user/{admin}/edit', [AdminController::class, 'edit'])->name('admin.edit');
+    Route::put('/web_user/{admin}', [AdminController::class, 'update'])->name('admin.update');
+    Route::delete('/web_user/{admin}', [AdminController::class, 'destroy'])->name('admin.destroy');
 
     // Rutas de reportes
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');

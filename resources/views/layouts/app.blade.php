@@ -105,6 +105,9 @@
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('reports.index') ? 'active' : '' }}" href="{{ route('reports.index') }}">Generar Reporte</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('admin.create') ? 'active' : '' }}" href="{{ route('admin.create') }}">Crear Usuario web</a>
+                        </li>
                     </ul>
                     <ul class="navbar-nav ms-auto">
                         <li class="nav-item">

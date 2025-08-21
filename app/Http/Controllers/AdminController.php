@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Admin;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class AdminController extends Controller
 {
@@ -20,7 +21,7 @@ class AdminController extends Controller
      */
     public function create()
     {
-        //
+        return view('incomes.web_user.create');
     }
 
     /**
@@ -28,7 +29,24 @@ class AdminController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'username' => 'required|string|unique:admins,username',
+            'password' => 'required|string|min:6|confirmed',
+        ]);
+
+        Admin::create([
+            'username' => $request->username,
+            'password' => Hash::make($request->password),
+        ]);
+
+        return redirect()->route('admin.search')->with('success', 'Administrador creado exitosamente.');
+    }
+
+
+    public function getAllEmployees()
+    {
+    $web_users = Admin::select('id','username')->paginate(5);
+     return view('incomes.web_user.search', compact('web_users'));
     }
 
     /**
@@ -44,7 +62,7 @@ class AdminController extends Controller
      */
     public function edit(Admin $admin)
     {
-        //
+        return view('incomes.web_user.edit', compact('admin'));
     }
 
     /**
@@ -52,7 +70,21 @@ class AdminController extends Controller
      */
     public function update(Request $request, Admin $admin)
     {
-        //
+        $request->validate([
+            'current_password' => 'required',
+            'password' => 'required|string|min:6|confirmed',
+        ]);
+
+        // Verificar contraseña actual
+        if (!Hash::check($request->current_password, $admin->password)) {
+            return back()->withErrors(['current_password' => 'La contraseña actual no es correcta.']);
+        }
+
+        // Actualizar nueva contraseña
+        $admin->password = Hash::make($request->password);
+        $admin->save();
+
+        return redirect()->route('admin.search')->with('success', 'Contraseña actualizada correctamente.');
     }
 
     /**
@@ -60,6 +92,7 @@ class AdminController extends Controller
      */
     public function destroy(Admin $admin)
     {
-        //
+        $admin->delete();
+        return redirect()->route('admin.search')->with('success', 'Administrador eliminado exitosamente.');
     }
 }
